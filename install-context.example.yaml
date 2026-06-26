@@ -1,0 +1,13 @@
+intended_command: "npm install"
+runtime: "local-development"
+operating_system: "macos"
+credential_names:
+  - GITHUB_TOKEN
+  - NPM_TOKEN
+  - OPENAI_API_KEY
+local_resources:
+  - project_directory
+  - home_directory
+  - docker_socket
+  - github_cli
+  - cloud_cli
