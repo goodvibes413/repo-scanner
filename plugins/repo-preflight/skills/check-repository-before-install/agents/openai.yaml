@@ -1,0 +1,4 @@
+interface:
+  display_name: "Check Repository Before Install"
+  short_description: "Scan repos before local install"
+  default_prompt: "Use $check-repository-before-install to evaluate this GitHub repo before I install or run it."

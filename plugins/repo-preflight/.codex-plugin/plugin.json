@@ -1,0 +1,29 @@
+{
+  "name": "repo-preflight",
+  "version": "0.1.0",
+  "description": "Check GitHub repositories before installing or running them locally.",
+  "author": {
+    "name": "Mike Davey",
+    "url": "https://github.com/goodvibes413"
+  },
+  "homepage": "https://github.com/goodvibes413/repo-scanner",
+  "repository": "https://github.com/goodvibes413/repo-scanner",
+  "license": "MIT",
+  "keywords": ["security", "github", "mcp", "supply-chain", "scanner"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Repo Preflight",
+    "shortDescription": "Check repos before installing them.",
+    "longDescription": "Repo Preflight adds a conservative install-risk workflow and MCP scanner for checking public GitHub repositories before you install, run, or add them as MCP servers with local credentials nearby.",
+    "developerName": "Mike Davey",
+    "category": "Security",
+    "capabilities": ["Tools", "Security review"],
+    "defaultPrompt": [
+      "Check this GitHub repo before I install it.",
+      "Review this MCP server repo before I add it.",
+      "Scan this repo for install-time risk."
+    ],
+    "brandColor": "#2563EB"
+  },
+  "mcpServers": "./.mcp.json"
+}

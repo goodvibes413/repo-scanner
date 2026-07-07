@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "repo-preflight": {
+      "command": "repo-preflight",
+      "args": ["mcp"]
+    }
+  }
+}

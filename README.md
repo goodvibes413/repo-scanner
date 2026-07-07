@@ -37,6 +37,52 @@ Use both.
 
 The skill alone is not enough because it is only instructions. The MCP server is what actually inspects the repo and returns evidence.
 
+## Install As A Codex Plugin
+
+If you use Codex, the most complete setup is the plugin:
+
+```text
+plugins/repo-preflight/
+```
+
+The plugin bundles:
+
+- the repo-checking skill
+- an MCP server config that runs `repo-preflight mcp`
+- marketplace metadata so Codex can discover the plugin from this repo
+
+Before using the plugin, install the scanner command from GitHub:
+
+```bash
+python3 -m pip install --user git+https://github.com/goodvibes413/repo-scanner.git
+```
+
+Then confirm this works:
+
+```bash
+repo-preflight doctor
+```
+
+The repo also includes a Codex marketplace file:
+
+```text
+.agents/plugins/marketplace.json
+```
+
+After opening this repo in Codex, install or enable the **Repo Preflight** plugin from the plugin browser. The plugin still depends on the installed `repo-preflight` command, so do the GitHub install step first.
+
+## Install As A Claude Skill
+
+Claude can use the skill instructions from:
+
+```text
+.claude/skills/check-repository-before-install/
+```
+
+The skill teaches Claude when to call Repo Preflight and how to explain the result. It does not run the scanner by itself.
+
+For Claude Desktop, you still need the MCP setup below so Claude can call the scanner. For Claude Code, keep this repo checked out or copy that skill folder into the Claude skill location you use for personal skills.
+
 ## Install From GitHub
 
 If you want to use Repo Preflight like a normal tool instead of working from a local source folder, install it from GitHub.
