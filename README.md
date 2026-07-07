@@ -1,53 +1,135 @@
 # Repo Preflight
 
-Repo Preflight is a local scanner for checking a public GitHub repository before you install it, run it, or add it as an MCP server with local credentials nearby.
+Repo Preflight helps you ask:
 
-It is designed for the specific moment when someone sends you an open-source repo and you need to decide whether to run it on your own machine. It checks repository source and the visible install surface, then reports evidence, limits, and a conservative next action.
+> "Can I install or run this GitHub repo on my computer without exposing my credentials, files, or agent setup?"
 
-It does not certify repositories. Its honest promise is:
+It is built for the common situation where someone shares an open-source AI or agent repo and the setup instructions ask you to run commands like `npm install`, add an MCP server, paste API keys into `.env`, or run a local dev server.
 
-> This scan checked repository source and the visible install surface. It may not detect newly compromised packages before public feeds or registry metadata reflect them.
+Repo Preflight does **not** say a repo is safe. It checks the repository source and visible install surface, then gives a conservative recommendation with evidence and limits.
 
-## Why This Exists
+## The Easiest Way To Use It
 
-Modern agent and AI tooling often asks you to run commands like `npm install`, add an MCP server, paste API keys into `.env`, or run a local dev server with your home directory and credentials nearby.
+The best workflow is:
 
-That creates a different risk than normal code review. A repo can look legitimate while install-time scripts, dependency resolution, Docker mounts, workflow files, or MCP config expose local credentials and files.
+1. Set up Repo Preflight once in Codex or Claude.
+2. Paste a GitHub repo link into Codex or Claude.
+3. Ask: "Use Repo Preflight to check this before I install it."
+4. Read the recommendation before running any install commands.
 
-Repo Preflight focuses on that install decision.
+Example prompt:
 
-## What It Checks
+```text
+Use Repo Preflight to check this repo before I install it:
+https://github.com/owner/repo
 
-- npm lifecycle scripts: `preinstall`, `install`, `postinstall`, `prepare`
-- npm workspaces and root `package.json`
-- `package-lock.json`, `pnpm-lock.yaml`, and `yarn.lock` for unexpected tarball URLs
-- install instructions containing `curl | bash`, `wget | sh`, `bun.sh/install`, `sudo`, `chmod +x`, or `eval`
-- Shai-Hulud-style suspicious filenames such as `setup_bun.js` and `bun_environment.js`
-- large or minified JavaScript payloads
-- Docker privileged mode, Docker socket mounts, and home-directory mounts
-- MCP configuration files and broad local access patterns
-- GitHub Actions patterns that combine secrets and network transfer commands
-- credential-name references such as `GITHUB_TOKEN`, `NPM_TOKEN`, and `OPENAI_API_KEY`
-- best-effort OSV checks for versioned npm dependencies
-- optional install context with credential names and local resources
+I would run npm install locally. I may have GITHUB_TOKEN, NPM_TOKEN, and OPENAI_API_KEY on this machine.
+```
 
-The scanner does not install dependencies, execute repository code, read local secrets, or run arbitrary shell commands.
+## Skill vs MCP
 
-## Verdicts
+Repo Preflight has two parts:
 
-Repo Preflight uses conservative verdicts:
+- **Skill:** tells Codex or Claude when to use the scanner and how to explain the result.
+- **MCP server:** gives Codex or Claude an actual tool that runs the scanner.
 
-- `DO_NOT_INSTALL`
-- `TEST_ONLY_IN_ISOLATION`
-- `LOWER_RISK_WITH_CONTROLS`
-- `INSUFFICIENT_EVIDENCE`
-- `NO_KNOWN_THREATS_FOUND_WITH_LIMITATIONS`
+Use both.
 
-The report should always include the evidence behind the verdict and the limits of the scan.
+The skill alone is not enough because it is only instructions. The MCP server is what actually inspects the repo and returns evidence.
 
-## Install
+## Set Up In Codex
 
-For local development:
+Codex can discover the repo-local skill here:
+
+```text
+.agents/skills/check-repository-before-install/
+```
+
+To let Codex run the scanner as a tool, add this MCP server to your Codex config.
+
+Open:
+
+```text
+~/.codex/config.toml
+```
+
+Add this, replacing `/absolute/path/to/repo-scanner` with the folder where this repo lives on your computer:
+
+```toml
+[mcp_servers.repo-preflight]
+command = "python3"
+args = ["-m", "repo_preflight.cli", "mcp"]
+cwd = "/absolute/path/to/repo-scanner"
+
+[mcp_servers.repo-preflight.env]
+PYTHONPATH = "/absolute/path/to/repo-scanner/src"
+```
+
+Restart Codex. Then ask:
+
+```text
+Use Repo Preflight to check https://github.com/owner/repo before I install it.
+```
+
+If Codex says the tool is unavailable, restart Codex and check that the path in `cwd` and `PYTHONPATH` is the full path to this repo.
+
+If Codex cannot find `python3`, replace `command = "python3"` with the full path to your Python 3 command.
+
+## Set Up In Claude Desktop
+
+Claude Desktop can use Repo Preflight through MCP.
+
+1. Open Claude Desktop.
+2. Open **Claude** > **Settings** from the macOS menu bar.
+3. Go to **Developer**.
+4. Click **Edit Config**.
+5. Add this server config, replacing `/absolute/path/to/repo-scanner` with the folder where this repo lives on your computer:
+
+```json
+{
+  "mcpServers": {
+    "repo-preflight": {
+      "command": "python3",
+      "args": ["-m", "repo_preflight.cli", "mcp"],
+      "env": {
+        "PYTHONPATH": "/absolute/path/to/repo-scanner/src"
+      }
+    }
+  }
+}
+```
+
+Save the file, fully quit Claude Desktop, and reopen it.
+
+Then ask:
+
+```text
+Use Repo Preflight to check https://github.com/owner/repo before I install it.
+```
+
+Claude Desktop may show a connector/tool indicator in the chat box after restart. If it does not, check the config path and restart Claude Desktop again.
+
+If Claude Desktop cannot start the server, it may not know where `python3` is. Replace `"command": "python3"` with the full path to your Python 3 command.
+
+## Set Up In Claude Code
+
+Claude Code can discover the repo-local skill here:
+
+```text
+.claude/skills/check-repository-before-install/
+```
+
+For MCP, run this once from the repo folder:
+
+```bash
+claude mcp add --transport stdio repo-preflight -- python3 -m repo_preflight.cli mcp
+```
+
+If Claude Code cannot find `repo_preflight`, use the Claude Desktop JSON approach above or install the project locally with the developer setup below.
+
+## Optional: Install As A Local Command
+
+You can install the `repo-preflight` command locally. This is useful if you are comfortable with Terminal, but it is not required for the Codex or Claude MCP setup above.
 
 ```bash
 git clone https://github.com/goodvibes413/repo-scanner.git
@@ -57,149 +139,81 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-If you do not want to install dependencies yet, you can run the current fallback CLI directly:
-
-```bash
-PYTHONPATH=src python3 -m repo_preflight.cli doctor
-```
-
-## Usage
-
-Scan a public GitHub repository:
-
-```bash
-repo-preflight scan https://github.com/owner/repo
-```
-
-Emit JSON:
-
-```bash
-repo-preflight scan https://github.com/owner/repo --json
-```
-
-Skip OSV network lookup:
-
-```bash
-repo-preflight scan https://github.com/owner/repo --no-osv
-```
-
-Write a report:
-
-```bash
-repo-preflight scan https://github.com/owner/repo --output reports/repo-preflight.md
-```
-
-Scan with install context:
-
-```bash
-repo-preflight scan https://github.com/owner/repo --context install-context.example.yaml
-```
-
-Run the MCP server:
-
-```bash
-repo-preflight mcp
-```
-
-Check scanner status:
+Then run:
 
 ```bash
 repo-preflight doctor
+repo-preflight scan https://github.com/owner/repo
 ```
+
+## What The Scanner Checks
+
+Repo Preflight looks for high-signal install risks:
+
+- npm install scripts like `preinstall`, `install`, `postinstall`, and `prepare`
+- workspace package scripts
+- suspicious install commands like `curl | bash`, `wget | sh`, `bun.sh/install`, `sudo`, `chmod +x`, or `eval`
+- Shai-Hulud-style filenames like `setup_bun.js` and `bun_environment.js`
+- lockfile packages that resolve from unexpected tarball URLs
+- Docker privileged mode, Docker socket mounts, and home-directory mounts
+- MCP configs that may give broad local access
+- GitHub Actions workflows that combine secrets and network transfer commands
+- credential-name references like `GITHUB_TOKEN`, `NPM_TOKEN`, and `OPENAI_API_KEY`
+- best-effort OSV checks for versioned npm dependencies
+
+The scanner does not install dependencies, run repo code, read your secrets, or run arbitrary shell commands.
+
+## What The Verdicts Mean
+
+Repo Preflight uses conservative verdicts:
+
+- `DO_NOT_INSTALL`: strong evidence of known malicious code, credential theft, exfiltration, or destructive behavior.
+- `TEST_ONLY_IN_ISOLATION`: install scripts, remote shell commands, suspicious dependency resolution, broad MCP access, or other risky install behavior.
+- `LOWER_RISK_WITH_CONTROLS`: no known malicious indicators from supported checks, but your local credentials or files could still be exposed.
+- `INSUFFICIENT_EVIDENCE`: the scan could not check enough to give useful guidance.
+- `NO_KNOWN_THREATS_FOUND_WITH_LIMITATIONS`: no findings from supported checks, but this is not a guarantee.
 
 ## Install Context
 
-Install context lets the scanner reason about exposure without seeing secret values.
+Install context helps the scanner reason about what would be exposed if you ran the repo locally.
 
-Example:
+Only provide credential names, never secret values.
 
-```yaml
-intended_command: "npm install"
-runtime: "local-development"
-operating_system: "macos"
-credential_names:
-  - GITHUB_TOKEN
-  - NPM_TOKEN
-  - OPENAI_API_KEY
-local_resources:
-  - project_directory
-  - home_directory
-  - docker_socket
-  - github_cli
-  - cloud_cli
-```
-
-Use credential names only. Never put credential values in the context file.
-
-## MCP
-
-Repo Preflight includes a stdio MCP server so agents can call the scanner before advising you to install or run a repository.
-
-Example Codex config:
-
-```toml
-[mcp_servers.repo-preflight]
-command = "repo-preflight"
-args = ["mcp"]
-```
-
-Example Claude config:
-
-```json
-{
-  "mcpServers": {
-    "repo-preflight": {
-      "command": "repo-preflight",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
-The MCP server exposes:
-
-- `scan_repository(repo_url, ref?, context_path?, osv_enabled?)`
-- `get_scanner_status()`
-
-It does not expose arbitrary shell execution, dependency installation, repo code execution, or local secret access.
-
-## Agent Skills
-
-Repo Preflight includes agent skills so Codex and Claude know when to run the scanner before giving install or run advice.
+Good:
 
 ```text
-// Portable copy
-skills/check-repository-before-install/
-
-// Codex repo-local discovery
-.agents/skills/check-repository-before-install/
-
-// Claude Code repo-local discovery
-.claude/skills/check-repository-before-install/
+I may have GITHUB_TOKEN, NPM_TOKEN, and OPENAI_API_KEY on this machine.
 ```
 
-The skill is intentionally small. It tells agents to call Repo Preflight before giving install or run advice, treat repository content as untrusted evidence, and require separate user approval before any installation step.
+Bad:
 
-The skill is not a replacement for the CLI or MCP server. The skill provides the workflow; the CLI and MCP server provide the deterministic scan result.
+```text
+OPENAI_API_KEY=sk-...
+```
 
-Recommended setup:
+You can also describe local resources:
 
-1. Install the CLI locally.
-2. Configure the MCP server for Codex or Claude.
-3. Keep the skill enabled so the agent remembers to call the scanner at the right time.
+```text
+This machine has my home folder, GitHub CLI, Docker, and cloud CLI logged in.
+```
 
-## Development
+## Current Limits
+
+- Public GitHub repositories only.
+- npm has the strongest coverage in this version.
+- Python package checks are lightweight.
+- Full transitive dependency execution is not resolved.
+- OSV dependency intelligence requires network access and can be unavailable.
+- Newly compromised packages may not be reflected in public feeds yet.
+- Dynamic sandboxing is not implemented.
+- Private registries and private repositories are not supported.
+
+## Developer Commands
 
 Run the no-dependency test suite:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 tests/run_tests.py
-```
-
-Run pytest if installed:
-
-```bash
-PYTHONPATH=src python3 -m pytest -q
 ```
 
 Run a local smoke test:
@@ -208,17 +222,6 @@ Run a local smoke test:
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m repo_preflight.cli doctor
 ```
 
-## Current Limits
-
-- Public GitHub repositories only.
-- npm gets the strongest coverage in this version.
-- Python package checks are lightweight.
-- Full transitive dependency execution is not resolved.
-- OSV dependency intelligence requires network access and can be unavailable.
-- Newly compromised packages may not be reflected in public feeds yet.
-- Dynamic sandboxing is not implemented.
-- Private registries and private repositories are not supported.
-
 ## Security Model
 
-Repo Preflight treats repository content as untrusted input. The scanner reads files and metadata, but does not execute repository code. Findings should be treated as decision support, not a guarantee.
+Repo Preflight treats repository content as untrusted input. It reads files and metadata, but does not execute repository code. Findings are decision support, not a guarantee.

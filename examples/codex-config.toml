@@ -1,3 +1,7 @@
 [mcp_servers.repo-preflight]
-command = "repo-preflight"
-args = ["mcp"]
+command = "python3"
+args = ["-m", "repo_preflight.cli", "mcp"]
+cwd = "/absolute/path/to/repo-scanner"
+
+[mcp_servers.repo-preflight.env]
+PYTHONPATH = "/absolute/path/to/repo-scanner/src"

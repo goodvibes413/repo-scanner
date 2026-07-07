@@ -1,8 +1,11 @@
 {
   "mcpServers": {
     "repo-preflight": {
-      "command": "repo-preflight",
-      "args": ["mcp"]
+      "command": "python3",
+      "args": ["-m", "repo_preflight.cli", "mcp"],
+      "env": {
+        "PYTHONPATH": "/absolute/path/to/repo-scanner/src"
+      }
     }
   }
 }
