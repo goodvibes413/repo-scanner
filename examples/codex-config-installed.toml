@@ -1,0 +1,3 @@
+[mcp_servers.repo-preflight]
+command = "repo-preflight"
+args = ["mcp"]

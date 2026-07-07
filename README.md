@@ -37,6 +37,50 @@ Use both.
 
 The skill alone is not enough because it is only instructions. The MCP server is what actually inspects the repo and returns evidence.
 
+## Install From GitHub
+
+If you want to use Repo Preflight like a normal tool instead of working from a local source folder, install it from GitHub.
+
+This still requires one short Terminal step.
+
+Recommended:
+
+```bash
+python3 -m pip install --user git+https://github.com/goodvibes413/repo-scanner.git
+```
+
+Then check that it works:
+
+```bash
+repo-preflight doctor
+```
+
+If your computer says `repo-preflight: command not found`, the tool installed but your Terminal cannot find the command yet. Try:
+
+```bash
+python3 -m repo_preflight.cli doctor
+```
+
+If that works, you can still use it in Codex or Claude with:
+
+```text
+command: python3
+args: -m repo_preflight.cli mcp
+```
+
+If you are comfortable with `pipx`, this is usually cleaner:
+
+```bash
+pipx install git+https://github.com/goodvibes413/repo-scanner.git
+```
+
+After installing from GitHub, the Codex and Claude MCP configs can use the installed command:
+
+```text
+command: repo-preflight
+args: mcp
+```
+
 ## Set Up In Codex
 
 Codex can discover the repo-local skill here:
@@ -53,7 +97,21 @@ Open:
 ~/.codex/config.toml
 ```
 
-Add this, replacing `/absolute/path/to/repo-scanner` with the folder where this repo lives on your computer:
+If you installed from GitHub, add:
+
+```toml
+[mcp_servers.repo-preflight]
+command = "repo-preflight"
+args = ["mcp"]
+```
+
+This example is also available at:
+
+```text
+examples/codex-config-installed.toml
+```
+
+If you are running from a local source folder instead, add this and replace `/absolute/path/to/repo-scanner` with the folder where this repo lives on your computer:
 
 ```toml
 [mcp_servers.repo-preflight]
@@ -71,7 +129,7 @@ Restart Codex. Then ask:
 Use Repo Preflight to check https://github.com/owner/repo before I install it.
 ```
 
-If Codex says the tool is unavailable, restart Codex and check that the path in `cwd` and `PYTHONPATH` is the full path to this repo.
+If Codex says the tool is unavailable, restart Codex and check that either `repo-preflight` is installed or the `cwd` and `PYTHONPATH` values are the full path to this repo.
 
 If Codex cannot find `python3`, replace `command = "python3"` with the full path to your Python 3 command.
 
@@ -83,7 +141,26 @@ Claude Desktop can use Repo Preflight through MCP.
 2. Open **Claude** > **Settings** from the macOS menu bar.
 3. Go to **Developer**.
 4. Click **Edit Config**.
-5. Add this server config, replacing `/absolute/path/to/repo-scanner` with the folder where this repo lives on your computer:
+5. If you installed from GitHub, add this server config:
+
+```json
+{
+  "mcpServers": {
+    "repo-preflight": {
+      "command": "repo-preflight",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+This example is also available at:
+
+```text
+examples/claude-mcp-installed.json
+```
+
+If you are running from a local source folder instead, add this server config and replace `/absolute/path/to/repo-scanner` with the folder where this repo lives on your computer:
 
 ```json
 {
@@ -109,7 +186,7 @@ Use Repo Preflight to check https://github.com/owner/repo before I install it.
 
 Claude Desktop may show a connector/tool indicator in the chat box after restart. If it does not, check the config path and restart Claude Desktop again.
 
-If Claude Desktop cannot start the server, it may not know where `python3` is. Replace `"command": "python3"` with the full path to your Python 3 command.
+If Claude Desktop cannot start the server, it may not know where `repo-preflight` or `python3` is. Replace `"command": "repo-preflight"` or `"command": "python3"` with the full path to that command.
 
 ## Set Up In Claude Code
 
