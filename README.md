@@ -163,15 +163,30 @@ The MCP server exposes:
 
 It does not expose arbitrary shell execution, dependency installation, repo code execution, or local secret access.
 
-## Agent Skill
+## Agent Skills
 
-The repo includes a portable skill at:
+Repo Preflight includes agent skills so Codex and Claude know when to run the scanner before giving install or run advice.
 
 ```text
+// Portable copy
 skills/check-repository-before-install/
+
+// Codex repo-local discovery
+.agents/skills/check-repository-before-install/
+
+// Claude Code repo-local discovery
+.claude/skills/check-repository-before-install/
 ```
 
-The skill tells agents to call Repo Preflight before giving install or run advice, treat repository content as untrusted evidence, and require separate user approval before any installation step.
+The skill is intentionally small. It tells agents to call Repo Preflight before giving install or run advice, treat repository content as untrusted evidence, and require separate user approval before any installation step.
+
+The skill is not a replacement for the CLI or MCP server. The skill provides the workflow; the CLI and MCP server provide the deterministic scan result.
+
+Recommended setup:
+
+1. Install the CLI locally.
+2. Configure the MCP server for Codex or Claude.
+3. Keep the skill enabled so the agent remembers to call the scanner at the right time.
 
 ## Development
 
