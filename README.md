@@ -71,6 +71,19 @@ The repo also includes a Codex marketplace file:
 
 After opening this repo in Codex, install or enable the **Repo Preflight** plugin from the plugin browser. The plugin still depends on the installed `repo-preflight` command, so do the GitHub install step first.
 
+If Terminal says `codex: command not found`, use the Codex app's bundled command directly:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex plugin marketplace add /absolute/path/to/repo-scanner
+```
+
+Do not append `repo-preflight doctor` to that command. These are two separate checks:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex plugin marketplace add /absolute/path/to/repo-scanner
+/Users/michaeldavey/Library/Python/3.14/bin/repo-preflight doctor
+```
+
 ## Install As A Claude Skill
 
 Claude can use the skill instructions from:
